@@ -4,7 +4,7 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} node:20-alpine3.20 AS alpine
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk update && apk upgrade --no-cache libcrypto3 libssl3 libc6-compat busybox ssl_client
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} alpine AS base
+FROM --platform=${TARGETPLATFORM:-linux/amd64} alpine AS base
 RUN npm install turbo@^1.13.3 --global
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -12,7 +12,7 @@ RUN corepack enable
 RUN corepack prepare pnpm@8.15.5 --activate
 
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} base AS pruner
+FROM --platform=${TARGETPLATFORM:-linux/amd64} base AS pruner
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN turbo prune --scope=worker --docker
 
 
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} base AS builder
+FROM --platform=${TARGETPLATFORM:-linux/amd64} base AS builder
 
 WORKDIR /app
 
@@ -61,4 +61,4 @@ COPY --from=builder --chown=expressjs:expressjs /app .
 EXPOSE 3030
 ENV PORT=3030
 
-CMD ["node", "worker/dist/index.js"]
+ENTRYPOINT ["node", "worker/dist/index.js"]
